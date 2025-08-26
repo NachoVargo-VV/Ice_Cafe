@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Айс Кафе — Доставка</title>
+    <meta name="description" content="Айс Кафе — доставка блюд. Заказ по граммам, корзина, админка, Telegram боты для персонала и клиентов, статусы и роли." />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header>
+      <div class="header-inner">
+        <div class="brand">
+          <div class="logo" id="brandLogo" aria-hidden="true"></div>
+          <h1>Айс Кафе — Доставка</h1>
+          <div id="adminSecret" class="admin-secret" title="Служебная зона"></div>
+        </div>
+        <div></div>
+        <div class="header-actions">
+          <div id="scheduleDisplay" class="schedule-display"></div>
+          <button id="myOrdersBtn" class="btn btn-ghost">Мои заказы</button>
+          <span id="authInfo" class="btn btn-ghost" style="display:none;"></span>
+          <button id="loginBtn" class="btn btn-ghost">Войти</button>
+          <button id="logoutBtn" class="btn btn-ghost" style="display:none;">Выйти</button>
+          <button id="openCartBtn" class="btn btn-primary">Корзина</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="container">
+      <div class="layout">
+        <aside class="sidebar" aria-label="Категории">
+          <div class="categories" id="categories"></div>
+        </aside>
+
+        <section class="content">
+          <div id="resultInfo" class="admin-note" style="margin-bottom:8px;"></div>
+          <div id="grid" class="grid"></div>
+        </section>
+
+        <aside class="cart" aria-label="Корзина">
+          <div class="admin-bar">
+            <h2>Корзина</h2>
+            <span id="cartCount" class="admin-note"></span>
+          </div>
+          <div id="cartEmpty" class="cart-empty">Пока пусто</div>
+          <div id="cartItems" class="cart-items"></div>
+          <div class="cart-total">
+            <span>Итого</span>
+            <span id="cartTotal">0 ₽</span>
+          </div>
+          <div class="cart-actions">
+            <button id="clearCartBtn" class="btn btn-danger">Очистить</button>
+            <button id="checkoutBtn" class="btn btn-success">Оформить заказ</button>
+          </div>
+        </aside>
+      </div>
+
+      <section id="adminPanel" class="admin-panel" aria-label="Панель администратора">
+        <div class="admin-tabs-bar">
+          <div class="admin-tabs" id="adminTabs">
+            <div id="adminAdvancedSecret" class="admin-advanced-secret" title="Скрытые вкладки"></div>
+          </div>
+          <button id="adminCloseBtn" class="btn btn-ghost admin-close">Закрыть админку</button>
+        </div>
+
+        <div id="tab-items" class="admin-section">
+          <div class="admin-note">Вкл/выкл блюда. Используйте категории для фильтрации.</div>
+          <div id="adminCategories" class="categories" style="flex-direction:row; flex-wrap:wrap; gap:8px; margin-top:8px;"></div>
+
+          <div class="admin-row" id="adminItemsToolbar" style="margin-top:8px;">
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+              <button id="adminSelectAllBtn" class="btn btn-success">Выбрать всё (в наличии)</button>
+              <button id="adminDeselectAllBtn" class="btn btn-danger">Снять всё (в наличии)</button>
+            </div>
+            <div></div>
+          </div>
+
+          <div id="adminItems" class="admin-grid" style="margin-top:12px;"></div>
+
+          <form id="adminAddForm" class="admin-form">
+            <div class="field">
+              <label for="addName">Название блюда</label>
+              <input id="addName" type="text" placeholder="Например, Куриное филе гриль" required />
+            </div>
+            <div class="field">
+              <label for="addCategory">Категория</label>
+              <select id="addCategory" required></select>
+            </div>
+            <div class="field">
+              <label for="addPrice100">Цена (за 100 г или за шт, ₽)</label>
+              <input id="addPrice100" type="number" min="1" step="1" placeholder="например, 190" required />
+            </div>
+            <div class="field">
+              <label for="addByWeight">Продавать по граммам (мин. 100 г)</label>
+              <select id="addByWeight">
+                <option value="true" selected>Да</option>
+                <option value="false">Нет (штучно)</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="addImage">Фото блюда (опционально)</label>
+              <input id="addImage" type="file" accept="image/*" />
+            </div>
+            <div class="field-full">
+              <button class="btn btn-primary" type="submit">Добавить блюдо</button>
+            </div>
+          </form>
+        </div>
+
+        <div id="tab-categories" class="admin-section">
+          <div class="admin-note">Создание, переименование, удаление и скрытие категорий.</div>
+
+          <form id="addCategoryForm" class="admin-form" style="margin-top:8px;">
+            <div class="field">
+              <label for="addCategoryName">Новая категория</label>
+              <input id="addCategoryName" type="text" placeholder="Например, Гарниры" />
+            </div>
+            <div class="field">
+              <label>&nbsp;</label>
+              <button type="submit" class="btn btn-primary">Создать категорию</button>
+            </div>
+          </form>
+
+          <div id="categoryManager" class="admin-grid" style="margin-top:8px;"></div>
+        </div>
+
+        <div id="tab-orders" class="admin-section">
+          <div class="admin-note">Заявки клиентов (сайта и Telegram). Меняйте статусы, удаляйте заявки. Сборщик может добирать «Комплект».</div>
+          <div id="adminOrders" class="admin-grid" style="margin-top:12px;"></div>
+        </div>
+
+        <div id="tab-bots" class="admin-section">
+          <div class="admin-note">Настройки Telegram‑ботов. Отдельно для персонала (админ/сборщик/курьер) и для клиентов.</div>
+
+          <h4 style="margin:8px 0 0 0;">Бот персонала (принимает заявки и статусы)</h4>
+          <form id="staffTgForm" class="admin-form">
+            <div class="field">
+              <label for="staffTgBotToken">Staff Bot Token</label>
+              <input id="staffTgBotToken" type="text" placeholder="123456:ABC-DEF..." />
+            </div>
+            <div class="field">
+              <label for="staffTgChatId">Staff Chat ID (куда падают заявки)</label>
+              <input id="staffTgChatId" type="text" placeholder="@channel или числовой ID" />
+            </div>
+            <div class="field-full">
+              <button type="submit" class="btn btn-primary">Сохранить бот персонала</button>
+            </div>
+          </form>
+
+          <h4 style="margin:8px 0 0 0;">Бот клиентов (меню, корзина, оформление)</h4>
+          <form id="clientTgForm" class="admin-form">
+            <div class="field">
+              <label for="clientTgBotToken">Client Bot Token</label>
+              <input id="clientTgBotToken" type="text" placeholder="123456:ABC-DEF..." />
+            </div>
+            <div class="field-full">
+              <button type="submit" class="btn btn-primary">Сохранить бот клиентов</button>
+            </div>
+          </form>
+
+          <div class="admin-note" style="margin-top:6px;">Роли персонала</div>
+          <form id="rolesForm" class="admin-form">
+            <div class="field">
+              <label for="roleUserId">Telegram user_id</label>
+              <input id="roleUserId" type="text" placeholder="например, 123456789" />
+            </div>
+            <div class="field">
+              <label for="roleType">Роль</label>
+              <select id="roleType">
+                <option value="admin">Администратор</option>
+                <option value="picker">Сборщик</option>
+                <option value="courier">Курьер</option>
+              </select>
+            </div>
+            <div class="field-full">
+              <button type="submit" class="btn btn-primary">Добавить/обновить роль</button>
+            </div>
+          </form>
+          <div id="rolesList" class="admin-grid" style="margin-top:12px;"></div>
+
+          <div class="admin-note" style="margin-top:6px;">Клиенты Telegram‑бота</div>
+          <div id="tgClientsList" class="admin-grid"></div>
+        </div>
+
+        <div id="tab-settings" class="admin-section">
+          <div class="admin-note">Логотип и палитра сайта.</div>
+          <form id="settingsForm" class="admin-form">
+            <div class="field">
+              <label for="brandLogoInput">Логотип (заменит кружок)</label>
+              <input id="brandLogoInput" type="file" accept="image/*" />
+            </div>
+            <div class="field">
+              <label>&nbsp;</label>
+              <button id="saveLogoBtn" type="button" class="btn btn-primary">Сохранить логотип</button>
+            </div>
+            <div class="field">
+              <label>&nbsp;</label>
+              <button id="resetLogoBtn" type="button" class="btn btn-ghost">Сбросить логотип</button>
+            </div>
+
+            <div class="field-full">
+              <label>Палитра</label>
+              <div style="display:grid;grid-template-columns:repeat(12,1fr);gap:8px;">
+                <div style="grid-column:span 3;">
+                  <label style="font-size:12px;color:var(--text-500)">--peach-300</label>
+                  <input type="color" data-var="--peach-300" id="var_peach_300" />
+                </div>
+                <div style="grid-column:span 3;">
+                  <label style="font-size:12px;color:var(--text-500)">--rose-300</label>
+                  <input type="color" data-var="--rose-300" id="var_rose_300" />
+                </div>
+                <div style="grid-column:span 3;">
+                  <label style="font-size:12px;color:var(--text-500)">--coral-500</label>
+                  <input type="color" data-var="--coral-500" id="var_coral_500" />
+                </div>
+                <div style="grid-column:span 3;">
+                  <label style="font-size:12px;color:var(--text-500)">--text-900</label>
+                  <input type="color" data-var="--text-900" id="var_text_900" />
+                </div>
+              </div>
+            </div>
+            <div class="field">
+              <label>&nbsp;</label>
+              <button id="saveThemeBtn" type="button" class="btn btn-primary">Сохранить палитру</button>
+            </div>
+            <div class="field">
+              <label>&nbsp;</label>
+              <button id="resetThemeBtn" type="button" class="btn btn-ghost">Сбросить палитру</button>
+            </div>
+          </form>
+        </div>
+
+        <div id="tab-blacklist" class="admin-section">
+          <form id="blacklistForm" class="admin-form">
+            <div class="field">
+              <label for="blacklistPhone">Телефон для блокировки</label>
+              <input id="blacklistPhone" type="tel" placeholder="+7..." />
+            </div>
+            <div class="field">
+              <label>&nbsp;</label>
+              <button type="submit" class="btn btn-danger">Добавить в чёрный список</button>
+            </div>
+          </form>
+          <div id="adminBlacklist" class="admin-grid" style="margin-top:12px;"></div>
+        </div>
+
+        <div id="tab-schedule" class="admin-section">
+          <form id="scheduleForm" class="admin-form">
+            <div class="field-full">
+              <label for="scheduleText">График работы (отображается в шапке)</label>
+              <input id="scheduleText" type="text" placeholder="Ежедневно 10:00–22:00" />
+            </div>
+            <div class="field-full">
+              <button class="btn btn-primary" type="submit">Сохранить график</button>
+            </div>
+          </form>
+        </div>
+
+        <div id="tab-footer" class="admin-section">
+          <form id="footerForm" class="admin-form">
+            <div class="field-full">
+              <label for="footerContacts">Контактная информация (HTML допускается)</label>
+              <textarea id="footerContacts" placeholder="Телефон, адрес, почта..."></textarea>
+            </div>
+            <div class="field-full">
+              <label for="footerVacancies">Вакансии (HTML допускается)</label>
+              <textarea id="footerVacancies" placeholder="Открытые вакансии..."></textarea>
+            </div>
+            <div class="field-full">
+              <button class="btn btn-primary" type="submit">Сохранить подвал</button>
+            </div>
+          </form>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <div class="container">
+        <div class="footer-grid">
+          <div class="footer-col">
+            <div class="footer-box">
+              <h4>Контактная информация</h4>
+              <div id="footerContactsView" class="admin-note"></div>
+            </div>
+          </div>
+          <div class="footer-col">
+            <div class="footer-box">
+              <h4>Вакансии</h4>
+              <div id="footerVacanciesView" class="admin-note"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <!-- Модалки -->
+    <div id="modal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div class="modal">
+        <div class="modal-header">
+          <h3 id="modalTitle" style="margin:0;font-size:18px;">Оформление заказа</h3>
+          <button id="modalCloseBtn" class="btn btn-ghost">Закрыть</button>
+        </div>
+        <div class="modal-body">
+          <div class="field-full">
+            <label for="clientPhone">Телефон (для быстрой регистрации)</label>
+            <input id="clientPhone" type="tel" placeholder="+7 (___) ___-__-__" />
+          </div>
+          <div class="field-full">
+            <label for="clientName">Имя</label>
+            <input id="clientName" type="text" placeholder="Имя" />
+          </div>
+          <div class="field-full">
+            <label for="clientAddress">Адрес доставки</label>
+            <input id="clientAddress" type="text" placeholder="Город, улица, дом, подъезд, этаж" />
+          </div>
+          <div class="field-full">
+            <label for="clientNote">Комментарий</label>
+            <input id="clientNote" type="text" placeholder="Например, без лука" />
+          </div>
+          <div>
+            <div class="admin-note" style="margin-bottom:6px;">Сводка заказа</div>
+            <div id="orderSummary" class="order-summary" style="background: var(--peach-50); border: 1px solid var(--peach-200); border-radius: 12px; padding: 12px; font-size: 14px; white-space: pre-wrap;"></div>
+          </div>
+          <div id="orderWarning" class="admin-note" style="color:var(--red-500);display:none;"></div>
+        </div>
+        <div class="modal-footer">
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <button id="copyOrderBtn" class="btn btn-ghost">Скопировать</button>
+          </div>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <button id="submitOrderBtn" class="btn btn-primary">Отправить заявку</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="ordersModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="ordersModalTitle" style="display:none;">
+      <div class="modal">
+        <div class="modal-header">
+          <h3 id="ordersModalTitle" style="margin:0;font-size:18px;">Мои заказы</h3>
+          <button id="ordersModalClose" class="btn btn-ghost">Закрыть</button>
+        </div>
+        <div class="modal-body" id="ordersList" style="display:grid; gap:10px;"></div>
+      </div>
+    </div>
+
+    <div id="imageModal" class="modal-backdrop img-modal" role="dialog" aria-modal="true" aria-labelledby="imageModalTitle">
+      <div class="modal">
+        <div class="modal-header">
+          <h3 id="imageModalTitle" style="margin:0;font-size:16px;">Просмотр</h3>
+          <button id="imageModalClose" class="btn btn-ghost">Закрыть</button>
+        </div>
+        <div class="img-modal-body">
+          <img id="imageModalImg" alt="Просмотр товара" />
+        </div>
+        <div id="imageModalCaption" class="img-modal-caption"></div>
+      </div>
+    </div>
+
+    <div id="authModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="authTitle" style="display:none;">
+      <div class="modal" style="max-width:520px;">
+        <div class="modal-header">
+          <h3 id="authTitle" style="margin:0;font-size:18px;">Быстрая регистрация</h3>
+          <button id="authCloseBtn" class="btn btn-ghost">Закрыть</button>
+        </div>
+        <div class="modal-body">
+          <div class="field-full">
+            <label for="authPhone">Телефон</label>
+            <input id="authPhone" type="tel" placeholder="+7 (___) ___-__-__" />
+          </div>
+          <div class="field-full">
+            <label for="authName">Имя (необязательно)</label>
+            <input id="authName" type="text" placeholder="Имя" />
+          </div>
+          <div id="authWarning" class="admin-note" style="color:var(--red-500);display:none;"></div>
+        </div>
+        <div class="modal-footer" style="justify-content:flex-end;">
+          <button id="authSubmitBtn" class="btn btn-primary">Зарегистрироваться</button>
+        </div>
+      </div>
+    </div>
+
+    <script defer src="./app.js"></script>
+  </body>
+</html>
